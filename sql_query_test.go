@@ -129,6 +129,17 @@ func TestQuery(t *testing.T) {
 				Generate,
 			false,
 		},
+		{
+			"SELECT-with-RANGE-values",
+			"SELECT * FROM table_name WHERE col1 >= ? AND col1 < ?",
+			[]interface{}{"val1", "val2"},
+			msql.Select().From("table_name").
+				Where(
+					msql.SQLField{"col1": "val1"}.Gte(),
+					msql.SQLField{"col1": "val2"}.Lt(),
+				).Generate,
+			false,
+		},
 	}
 
 	for _, c := range cases {

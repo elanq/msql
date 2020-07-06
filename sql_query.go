@@ -17,6 +17,24 @@ var (
 
 type SQLField map[string]interface{}
 
+// Lt transform this field into lower than (default equal)
+func (s SQLField) Lt() SQLField {
+	if len(s) == 1 {
+		s["operator"] = "<"
+	}
+
+	return s
+}
+
+//Gte transform this field into greater than equal (default equal)
+func (s SQLField) Gte() SQLField {
+	if len(s) == 1 {
+		s["operator"] = ">="
+	}
+
+	return s
+}
+
 func (s SQLField) String(key string) string {
 	switch v := s[key].(type) {
 	case string:
@@ -188,6 +206,11 @@ func (q *SQLQuery) Generate() (string, []interface{}, error) {
 
 func writeValue(sb *strings.Builder, args *[]interface{}, field SQLField) {
 	for k, v := range field {
+		//skip meta information
+		if k == "operator" {
+			continue
+		}
+
 		vT := reflect.ValueOf(v)
 		if vT.Kind() == reflect.Slice || vT.Kind() == reflect.Array {
 			stmnt := fmt.Sprintf("%v IN ", k)
@@ -204,6 +227,9 @@ func writeValue(sb *strings.Builder, args *[]interface{}, field SQLField) {
 			return
 		}
 		stmnt := fmt.Sprintf("%v = ?", k)
+		if operator := field["operator"]; operator != nil {
+			stmnt = fmt.Sprintf("%v %v ?", k, operator)
+		}
 		sb.WriteString(stmnt)
 		*args = append(*args, v)
 	}
